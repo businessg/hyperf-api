@@ -1,5 +1,5 @@
 # hyperf-api
 
 ```
-composer requre hyperf-api
+composer require hyperf-api
 ```
