@@ -11,7 +11,7 @@ declare(strict_types=1);
  */
 namespace BusinessG\HyperfApi;
 
-class .ConfigProvider
+class ConfigProvider
 {
     public function __invoke(): array
     {

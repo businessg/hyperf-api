@@ -2,6 +2,7 @@
 
 namespace BusinessG\HyperfApi;
 
+use Hyperf\Contract\ConfigInterface;
 use Psr\Container\ContainerInterface;
 
 abstract  class AbstractApi implements ApiInterface
@@ -18,19 +19,19 @@ abstract  class AbstractApi implements ApiInterface
     {
         if (!method_exists($this, $name)) {
             if (in_array($name, $this->getApiKeys())) {
-                return call_user_func_array([$this, 'request'], [
-                    'apiKey' => $name,
-                    'apiParam' => $arguments[0],
-                ]);
+              return  call_user_func([$this, 'request'], ...$arguments);
             }
         }
     }
 
-    public function apis(): array
-    {
-        // TODO: Implement apis() method.
-    }
+    abstract public function apis(): array;
 
+
+    public function test(ApiParam $apiParam)
+    {
+        var_dump('test');
+
+    }
     public function getApiKeys()
     {
         return array_keys($this->apis());
@@ -38,7 +39,7 @@ abstract  class AbstractApi implements ApiInterface
 
     public function middlewares(): array
     {
-        // TODO: Implement middlewares() method.
+        return [];
     }
 
     public function beforeRequest()
@@ -48,6 +49,7 @@ abstract  class AbstractApi implements ApiInterface
 
     public function request(string $apiKey, object $apiParam)
     {
+        var_dump('我进来了');
         // TODO: Implement request() method.
     }
 
@@ -58,7 +60,7 @@ abstract  class AbstractApi implements ApiInterface
 
     public function isMock(): bool
     {
-        // TODO: Implement isMock() method.
+        return false;
     }
 
     public function getConfig(): array
