@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BusinessG\HyperfApi;
 
 use Hyperf\Contract\ConfigInterface;
@@ -15,27 +17,19 @@ abstract  class AbstractApi implements ApiInterface
         $this->config = $config->get('business_api.apis.' . static::class, []);
     }
 
-    public function __call(string $name, array $arguments): mixed
+    public function __call(string $name, array $arguments)
     {
-        if (!method_exists($this, $name)) {
-            if (in_array($name, $this->getApiKeys())) {
-              return  call_user_func([$this, 'request'], ...$arguments);
-            }
+        $apis = $this->apis();
+        if (isset($apis[$name])) {
+            $params = $arguments[0] ?? [];
+            $options = $arguments[1] ?? [];
+            return $this->request($name, $params, $options);
         }
+
+        throw new \BadMethodCallException("Method {$name} not found");
     }
 
     abstract public function apis(): array;
-
-
-    public function test(ApiParam $apiParam)
-    {
-        var_dump('test');
-
-    }
-    public function getApiKeys()
-    {
-        return array_keys($this->apis());
-    }
 
     public function middlewares(): array
     {
@@ -47,10 +41,14 @@ abstract  class AbstractApi implements ApiInterface
         // TODO: Implement beforeRequest() method.
     }
 
-    public function request(string $apiKey, object $apiParam)
+    public function request(string $apiKey)
     {
-        var_dump('我进来了');
-        // TODO: Implement request() method.
+
+    }
+
+    public function requestApiParam(ApiParam $apiParam, array $options = [])
+    {
+        // TODO: Implement requestApiParam() method.
     }
 
     public function batchRequest(array $apiKeys)
@@ -67,4 +65,5 @@ abstract  class AbstractApi implements ApiInterface
     {
         return  $this->config;
     }
+
 }
