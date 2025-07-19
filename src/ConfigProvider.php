@@ -11,11 +11,16 @@ declare(strict_types=1);
  */
 namespace BusinessG\HyperfApi;
 
+use BusinessG\HyperfApi\Listener\ApiParamAnnotationListener;
+
 class ConfigProvider
 {
     public function __invoke(): array
     {
         return [
+            'listeners' => [
+                ApiParamAnnotationListener::class
+            ],
             'dependencies' => [
             ],
             'commands' => [

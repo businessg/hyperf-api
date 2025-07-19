@@ -7,7 +7,7 @@ namespace BusinessG\HyperfApi;
 use Hyperf\Contract\ConfigInterface;
 use Psr\Container\ContainerInterface;
 
-abstract  class AbstractApi implements ApiInterface
+abstract class AbstractApi implements ApiInterface
 {
     protected array $config = [];
 
@@ -19,17 +19,25 @@ abstract  class AbstractApi implements ApiInterface
 
     public function __call(string $name, array $arguments)
     {
-        $apis = $this->apis();
+        $apis = $this->getAllApis();
         if (isset($apis[$name])) {
-            $params = $arguments[0] ?? [];
-            $options = $arguments[1] ?? [];
-            return $this->request($name, $params, $options);
+            $options = $arguments[0] ?? [];
+            return $this->request($name, $options ?? []);
         }
 
         throw new \BadMethodCallException("Method {$name} not found");
     }
 
-    abstract public function apis(): array;
+
+    final public function getAllApis(): array
+    {
+        return array_merge($this->apis(), $this->getConfig()['apis'] ?? []);
+    }
+
+    public function apis(): array
+    {
+        return [];
+    }
 
     public function middlewares(): array
     {
@@ -41,8 +49,9 @@ abstract  class AbstractApi implements ApiInterface
         // TODO: Implement beforeRequest() method.
     }
 
-    public function request(string $apiKey)
+    public function request(string $apiKey, array $options = [])
     {
+
 
     }
 
@@ -63,7 +72,7 @@ abstract  class AbstractApi implements ApiInterface
 
     public function getConfig(): array
     {
-        return  $this->config;
+        return $this->config;
     }
 
 }

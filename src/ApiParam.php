@@ -8,8 +8,9 @@ use BusinessG\HyperfApi\Constants\HttpMethod;
 
 class ApiParam
 {
-    protected HttpMethod $method = HttpMethod::GET;
+    protected string $method = HttpMethod::GET->value;
     protected string $url = '/';
+    protected string $description = '';
     protected bool $mock = false;
     protected mixed $mockData = null;
     protected array $options = [];
@@ -24,12 +25,12 @@ class ApiParam
         }
     }
 
-    public function getMethod(): HttpMethod
+    public function getMethod(): string
     {
         return $this->method;
     }
 
-    public function setMethod(HttpMethod $method): self
+    public function setMethod(string $method): static
     {
         $this->method = $method;
         return $this;
@@ -40,7 +41,7 @@ class ApiParam
         return $this->url;
     }
 
-    public function setUrl(string $url): self
+    public function setUrl(string $url): static
     {
         $this->url = $url;
         return $this;
@@ -51,7 +52,7 @@ class ApiParam
         return $this->mock;
     }
 
-    public function setMock(bool $mock): self
+    public function setMock(bool $mock): static
     {
         $this->mock = $mock;
         return $this;
@@ -62,7 +63,7 @@ class ApiParam
         return $this->mockData;
     }
 
-    public function setMockData(mixed $mockData): self
+    public function setMockData(mixed $mockData): static
     {
         $this->mockData = $mockData;
         return $this;
@@ -73,7 +74,7 @@ class ApiParam
         return $this->options;
     }
 
-    public function setOptions(array $options): self
+    public function setOptions(array $options): static
     {
         $this->options = $options;
         return $this;
@@ -84,7 +85,7 @@ class ApiParam
         return $this->middlewares;
     }
 
-    public function setMiddlewares(array $middlewares): self
+    public function setMiddlewares(array $middlewares): static
     {
         $this->middlewares = $middlewares;
         return $this;
