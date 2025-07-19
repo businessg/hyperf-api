@@ -28,21 +28,25 @@ abstract class AbstractApi implements ApiInterface
         throw new \BadMethodCallException("Method {$name} not found");
     }
 
-
+    /**
+     * api
+     *
+     * @return array<string, ApiParam>
+     */
     final public function getAllApis(): array
     {
         return array_merge($this->apis(), $this->getConfig()['apis'] ?? []);
     }
 
+    /**
+     * @return array<string, ApiParam>
+     */
     public function apis(): array
     {
         return [];
     }
 
-    public function middlewares(): array
-    {
-        return [];
-    }
+
 
     public function beforeRequest()
     {

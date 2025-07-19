@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace BusinessG\HyperfApi;
 
-use BusinessG\HyperfApi\Constants\HttpMethod;
+use BusinessG\HyperfApi\Constants\ContentType;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\Psr7\Response;
 
 class ApiParam
 {
-    protected string $method = HttpMethod::GET->value;
+    protected string $method = 'get';
     protected string $url = '/';
     protected string $description = '';
     protected bool $mock = false;
-    protected mixed $mockData = null;
+    protected ?MockHandler $mockHandler = null;
     protected array $options = [];
-    protected array $middlewares = [];
 
     public function __construct(array $config = [])
     {
@@ -23,17 +24,7 @@ class ApiParam
                 $this->{$key} = $value;
             }
         }
-    }
-
-    public function getMethod(): string
-    {
-        return $this->method;
-    }
-
-    public function setMethod(string $method): static
-    {
-        $this->method = $method;
-        return $this;
+        $this->mockHandler = $this->mockHandler ?: new MockHandler();
     }
 
     public function getUrl(): string
@@ -47,25 +38,56 @@ class ApiParam
         return $this;
     }
 
-    public function isMock(): bool
+    public function getMethod(): string
     {
-        return $this->mock;
+        return $this->method;
     }
 
-    public function setMock(bool $mock): static
+    public function setMethod(string $method): static
     {
-        $this->mock = $mock;
+        $this->method = $method;
         return $this;
     }
 
-    public function getMockData(): mixed
+    public function setDescription(string $description): static
     {
-        return $this->mockData;
+        $this->description = $description;
+        return $this;
     }
 
-    public function setMockData(mixed $mockData): static
+    public function getDescription(): string
     {
-        $this->mockData = $mockData;
+        return $this->description;
+    }
+
+
+    public function enableMock(): static
+    {
+        $this->mock = true;
+        return $this;
+    }
+
+
+    public function disableMock(): static
+    {
+        $this->mock = false;
+        return $this;
+    }
+
+    public function getMockHandle(): mixed
+    {
+        return $this->mockHandler;
+    }
+
+    public function setMockHandle(MockHandler $mockHandler): static
+    {
+        $this->mockHandler = $mockHandler;
+        return $this;
+    }
+
+    public function appendMockResponse(Response $response): static
+    {
+        $this->mockHandler->append($response);
         return $this;
     }
 
@@ -80,14 +102,27 @@ class ApiParam
         return $this;
     }
 
-    public function getMiddlewares(): array
+    public function buildMockResponse(
+        int     $status = 200,
+        array   $headers = [],
+                $body = null,
+        string  $version = '1.1',
+        ?string $reason = null
+    ): Response
     {
-        return $this->middlewares;
+        return new \GuzzleHttp\Psr7\Response(
+            $status,
+            $headers,
+            $body,
+            $version,
+            $reason
+        );
     }
 
-    public function setMiddlewares(array $middlewares): static
+    public function buildJsonResponse(int $status = 200, array $headers = [], array $params = [])
     {
-        $this->middlewares = $middlewares;
-        return $this;
+        $headers['Content-type'] = ContentType::APPLICATION_JSON->value;
+        return $this->buildMockResponse($status, $headers, json_encode($params));
     }
+
 }
