@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace BusinessG\HyperfApi;
 
+use BusinessG\HyperfApi\Exception\BusinessApiException;
+use BusinessG\HyperfApi\Exception\InvalidApiException;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Guzzle\ClientFactory;
 use Psr\Container\ContainerInterface;
@@ -32,7 +34,7 @@ class ApiFactory
         if (!$api instanceof ApiInterface) {
             $api = make($apiClass);
             if (!$api instanceof ApiInterface) {
-                throw new InvalidDriverException(sprintf('[Error] class %s is not instanceof %s.', $driverClass, ApiInterface::class));
+                throw new InvalidApiException(sprintf('[Error] class %s is not instanceof %s.', $apiClass, ApiInterface::class));
             }
             $this->apis[$apiClass] = $api;
         }

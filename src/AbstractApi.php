@@ -65,7 +65,7 @@ abstract class AbstractApi implements ApiInterface
         }
         $apiParam = $apis[$apiKey];
         if (!$apiParam instanceof ApiParam) {
-            throw new BusinessApiException(sprintf('The corresponding value of apikey[%s] must be an instance of %s', $apiKey, ApiParam::class));
+            throw new BusinessApiException(sprintf('The corresponding value of apikey [%s] must be an instance of %s', $apiKey, ApiParam::class));
         }
         return $apiParam;
     }
