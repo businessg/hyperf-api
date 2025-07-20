@@ -11,7 +11,7 @@ use GuzzleHttp\Psr7\Response;
 class ApiParam
 {
     protected string $method = 'get';
-    protected string $url = '/';
+    protected string $uri = '/';
     protected string $description = '';
     protected bool $mock = false;
     protected ?MockHandler $mockHandler = null;
@@ -27,14 +27,14 @@ class ApiParam
         $this->mockHandler = $this->mockHandler ?: new MockHandler();
     }
 
-    public function getUrl(): string
+    public function getUri(): string
     {
-        return $this->url;
+        return $this->uri;
     }
 
-    public function setUrl(string $url): static
+    public function setUri(string $uri): static
     {
-        $this->url = $url;
+        $this->uri = $uri;
         return $this;
     }
 

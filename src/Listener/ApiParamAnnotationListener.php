@@ -38,7 +38,7 @@ class ApiParamAnnotationListener implements ListenerInterface
             if (is_subclass_of($className, \BusinessG\HyperfApi\ApiParam::class)) {
                 $newConfig = [
                     'method' => $annotation->getMethod(),
-                    'url' => $annotation->getUrl(),
+                    'uri' => $annotation->getUri(),
                     'mock' => $annotation->isMock(),
                     'description' => $annotation->getDescription(),
                 ];

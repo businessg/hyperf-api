@@ -6,8 +6,6 @@ interface ApiInterface
 {
     public function apis(): array;
 
-    public function middlewares(): array;
-
     public function beforeRequest();
 
     public function request(string $apiKey, array $options = []);

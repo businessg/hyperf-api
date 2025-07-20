@@ -13,7 +13,7 @@ class ApiParam extends AbstractAnnotation
     public function __construct(
         public string  $apiClass,
         public ?string $apiKey = null,
-        public string  $url = '/',
+        public string  $uri = '/',
         public string  $description = '',
         public string  $method = 'GET',
         public bool    $mock = false,
@@ -21,9 +21,9 @@ class ApiParam extends AbstractAnnotation
     {
     }
 
-    public function getUrl()
+    public function getUri()
     {
-        return $this->url;
+        return $this->uri;
     }
 
     public function getApiKey()
