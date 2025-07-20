@@ -10,7 +10,7 @@ interface ApiInterface
 
     public function request(string $apiKey, array $options = []);
 
-    public function requestApiParam(ApiParam $apiParam, array $options = []);
+    public function requestByApiParam(ApiParam $apiParam, array $options = []);
 
     public function batchRequest(array $apiKeys);
 

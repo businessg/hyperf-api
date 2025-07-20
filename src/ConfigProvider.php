@@ -9,8 +9,11 @@ declare(strict_types=1);
  * @contact  group@hyperf.io
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
+
 namespace BusinessG\HyperfApi;
 
+use BusinessG\HyperfApi\Http\HttpClient;
+use BusinessG\HyperfApi\Http\HttpClientInterface;
 use BusinessG\HyperfApi\Listener\ApiParamAnnotationListener;
 
 class ConfigProvider
@@ -24,14 +27,7 @@ class ConfigProvider
             'dependencies' => [
             ],
             'commands' => [
-            ],
-            'annotations' => [
-                'scan' => [
-                    'paths' => [
-                        __DIR__,
-                    ],
-                ],
-            ],
+            ]
         ];
     }
 }

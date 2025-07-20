@@ -67,6 +67,11 @@ class ApiParam
         return $this;
     }
 
+    public function isMock(): bool
+    {
+        return $this->mock;
+    }
+
 
     public function disableMock(): static
     {
