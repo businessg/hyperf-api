@@ -227,7 +227,6 @@ abstract class AbstractApi implements ApiInterface
         return Middleware::log($this->logger, $formatter, $config['logLevel'] ?? LogLevel::INFO);
     }
 
-
     private function normalizeArrayWithBrackets(array $data): array
     {
         $result = [];
