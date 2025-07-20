@@ -7,9 +7,16 @@ namespace BusinessG\HyperfApi;
 use BusinessG\HyperfApi\Exception\BusinessApiException;
 use BusinessG\HyperfApi\Http\HttpClient;
 use BusinessG\HyperfApi\Http\HttpClientInterface;
+use BusinessG\HyperfApi\Http\SafeResponseFormatter;
+use GuzzleHttp\Middleware;
 use Hyperf\Collection\Arr;
 use Hyperf\Contract\ConfigInterface;
+use Hyperf\Logger\LoggerFactory;
+use perpower\outApi\Logger;
 use Psr\Container\ContainerInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
 use function Hyperf\Support\make;
 
 abstract class AbstractApi implements ApiInterface
@@ -18,18 +25,23 @@ abstract class AbstractApi implements ApiInterface
 
     protected ?HttpClientInterface $httpClient = null;
 
+    protected LoggerInterface $logger;
+
     public function __construct(protected ContainerInterface $container)
     {
         $config = $container->get(ConfigInterface::class);
-        $this->config = $config->get('business_api.apis.' . static::class, []);
-
+        $this->config = Arr::merge(
+            $config->get('business_api.common', []),
+            $config->get('business_api.apis.' . static::class, [])
+        );
+        $this->logger = $this->container->get(LoggerFactory::class)->get('business-api.' . static::class);
     }
 
     public function __call(string $name, array $arguments)
     {
         $apis = $this->getAllApis();
         if (isset($apis[$name])) {
-            return $this->request($name);
+            return $this->request($name, $arguments[0] ?? []);
         }
 
         throw new \BadMethodCallException("Method {$name} not found");
@@ -71,7 +83,6 @@ abstract class AbstractApi implements ApiInterface
         return [];
     }
 
-
     public function beforeRequest(ApiParam $apiParam): ApiParam
     {
         // 可改变apiParam的信息,比如options
@@ -84,6 +95,7 @@ abstract class AbstractApi implements ApiInterface
      * @param string $apiKey
      * @param array $options
      * @return \Psr\Http\Message\ResponseInterface
+     * @throws BusinessApiException
      */
     final  public function request(string $apiKey, array $options = [])
     {
@@ -104,6 +116,7 @@ abstract class AbstractApi implements ApiInterface
      *  ]`
      * @param bool $parallel
      * @return array
+     * @throws BusinessApiException
      */
     final public function batchRequest(array $apiKeys, bool $parallel = true): array
     {
@@ -122,6 +135,7 @@ abstract class AbstractApi implements ApiInterface
             }
             $apiParams[] = $apiParam;
         };
+
         return array_combine($keys, $this->batchRequestByApiParam($apiParams, $parallel));
     }
 
@@ -129,9 +143,7 @@ abstract class AbstractApi implements ApiInterface
      * 发送请求<apiParam>
      *
      * @param ApiParam $apiParam
-     * @param array $options
-     * @return \Psr\Http\Message\ResponseInterface
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @return ResponseInterface
      */
     final public function requestByApiParam(ApiParam $apiParam)
     {
@@ -143,10 +155,9 @@ abstract class AbstractApi implements ApiInterface
     /**
      * 批量请求<apiParam>
      *
-     * @param ApiParam $apiParam
-     * @param array $options
-     * @return \Psr\Http\Message\ResponseInterface[]
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @param array $apiParams
+     * @param bool $parallel
+     * @return ResponseInterface[]
      */
     final public function batchRequestByApiParam(array $apiParams, bool $parallel = true)
     {
@@ -168,8 +179,43 @@ abstract class AbstractApi implements ApiInterface
             $this->httpClient = make(HttpClient::class, [
                 'config' => $this->getConfig()['http'] ?? [],
             ]);
+            // 设置中间件
+            $this->httpClient->addMiddlewares($this->getMiddlewares());
         }
         return $this->httpClient;
+    }
+
+    public function middlewares(): array
+    {
+        return [];
+    }
+
+    private function getMiddlewares()
+    {
+        return array_merge($this->defautMiddlewares(), $this->middlewares());
+    }
+
+    /**
+     * 默认中间件
+     *
+     * @return array
+     */
+    private function defautMiddlewares(): array
+    {
+        return array_filter([
+            $this->getLogMiddleware(),
+        ]);
+    }
+
+    private function getLogMiddleware()
+    {
+        $config = $this->getConfig()['logger'] ?? [];
+        $enable = $config['enable'] ?? true;
+        if (!$enable) {
+            return null;
+        }
+        $formatter = new SafeResponseFormatter($config['messageFormatter'] ?? SafeResponseFormatter::CLF);
+        return Middleware::log($this->logger, $formatter, $config['logLevel'] ?? LogLevel::INFO);
     }
 
     public function getConfig(): array

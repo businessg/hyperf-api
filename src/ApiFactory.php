@@ -7,26 +7,35 @@ namespace BusinessG\HyperfApi;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Guzzle\ClientFactory;
 use Psr\Container\ContainerInterface;
+use function Hyperf\Support\make;
 
 class ApiFactory
 {
+    protected array $apis = [];
+    protected array $config = [];
+
     public function __construct(
         protected ContainerInterface $container,
-        protected ClientFactory $clientFactory,
-        protected ConfigInterface $config
-    ) {
+    )
+    {
+        $config = $container->get(ConfigInterface::class);
+        $this->config = $config->get('business_api');
     }
 
-    public function make(string $apiClass): AbstractApi
+    public function get(string $apiClass): AbstractApi
     {
         if (!class_exists($apiClass)) {
             throw new \InvalidArgumentException("API class {$apiClass} not found");
         }
 
-        return new $apiClass(
-            $this->container,
-            $this->clientFactory,
-            $this->config
-        );
+        $api = $this->apis[$apiClass] ?? null;
+        if (!$api instanceof ApiInterface) {
+            $api = make($apiClass);
+            if (!$api instanceof ApiInterface) {
+                throw new InvalidDriverException(sprintf('[Error] class %s is not instanceof %s.', $driverClass, ApiInterface::class));
+            }
+            $this->apis[$apiClass] = $api;
+        }
+        return $api;
     }
 }
