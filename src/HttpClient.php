@@ -29,6 +29,13 @@ class HttpClient
 
     /**
      * 发送HTTP请求
+     *
+     * @param string $method
+     * @param string $uri
+     * @param array $options
+     * @param MockHandler|null $mockHandler
+     * @return ResponseInterface
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public function request(
         string       $method,
@@ -46,7 +53,8 @@ class HttpClient
     /**
      * 批量发送HTTP请求
      *
-     * @param array $requests [
+     * @param array $requests
+     * `[
      *      [
      *          'method' => 'GET',
      *          'uri' => '/path',
@@ -54,7 +62,7 @@ class HttpClient
      *          'mockHandler' => MockHandler|null // 可选
      *      ],
      *      ...
-     *  ]
+     *  ]`
      * @param bool $parallel 是否并行执行
      * @return ResponseInterface[]|Throwable[]
      */
@@ -156,7 +164,7 @@ class HttpClient
     {
         $handlerStack = new HandlerStack($mockHandler);
         foreach ($this->getMiddlewares() as $middleware) {
-            $handlerStack->push($middleware);
+            $handlerStack->push($middleware, is_string($name) ? $name : '');
         }
         return new Client([
             'handler' => $handlerStack,
@@ -171,8 +179,8 @@ class HttpClient
     protected function getClient(): Client
     {
         $handlerStack = $this->stackFactory->create();
-        foreach ($this->getMiddlewares() as $middleware) {
-            $handlerStack->push($middleware);
+        foreach ($this->getMiddlewares() as $name => $middleware) {
+            $handlerStack->push($middleware, is_string($name) ? $name : '');
         }
         return $this->clientFactory->create([
             ...$this->config,
@@ -181,7 +189,7 @@ class HttpClient
     }
 
     /**
-     * 获取中间件
+     * 获取全局中间件
      *
      * @return array
      */
