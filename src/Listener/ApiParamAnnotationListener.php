@@ -3,6 +3,7 @@
 namespace BusinessG\HyperfApi\Listener;
 
 use BusinessG\HyperfApi\Annotation\ApiParam;
+use BusinessG\HyperfApi\Exception\BusinessApiException;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Di\Annotation\AnnotationCollector;
 use Hyperf\Event\Contract\ListenerInterface;
@@ -33,20 +34,27 @@ class ApiParamAnnotationListener implements ListenerInterface
             $apiKey = $annotation->getApiKey();
 
             $configKey = "business_api.apis.{$targetClass}.apis.{$apiKey}";
-            $currentConfig = $this->config->get($configKey, []);
 
-            if (is_subclass_of($className, \BusinessG\HyperfApi\ApiParam::class)) {
-                $newConfig = [
-                    'method' => $annotation->getMethod(),
-                    'uri' => $annotation->getUri(),
-                    'mock' => $annotation->isMock(),
-                    'description' => $annotation->getDescription(),
-                ];
-
-                // 合并配置（注解类配置优先）
-                $mergedConfig = array_merge($currentConfig, $newConfig);
-                $this->config->set($configKey, new $className($mergedConfig));
+            if (!is_subclass_of($className, \BusinessG\HyperfApi\ApiParam::class)) {
+                throw new BusinessApiException(sprintf("[%s] must be an instance of %s", $className, \BusinessG\HyperfApi\ApiParam::class));
             }
+
+            $apiParam = new $className($apiParam ?? []);
+
+            if ($annotation->uri) {
+                $apiParam->setUri($annotation->uri);
+            }
+            if ($annotation->method) {
+                $apiParam->setMethod($annotation->method);
+            }
+            if ($annotation->description) {
+                $apiParam->setDescription($annotation->description);
+            }
+
+            if ($annotation->mock !== null) {
+                $apiParam->setMock($annotation->mock);
+            }
+            $this->config->set($configKey, $apiParam);
         }
     }
 }

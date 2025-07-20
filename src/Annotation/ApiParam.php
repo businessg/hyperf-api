@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BusinessG\HyperfApi\Annotation;
 
+use GuzzleHttp\Handler\MockHandler;
 use Hyperf\Di\Annotation\AbstractAnnotation;
 use Attribute;
 
@@ -11,12 +12,12 @@ use Attribute;
 class ApiParam extends AbstractAnnotation
 {
     public function __construct(
-        public string  $apiClass,
-        public ?string $apiKey = null,
-        public string  $uri = '/',
-        public string  $description = '',
-        public string  $method = 'GET',
-        public bool    $mock = false,
+        public string       $apiClass,
+        public ?string      $apiKey = null,
+        public string       $uri = '',
+        public string       $description = '',
+        public string       $method = '',
+        public ?bool        $mock = null,
     )
     {
     }

@@ -60,6 +60,10 @@ class ApiParam
         return $this->description;
     }
 
+    public function isMock(): bool
+    {
+        return $this->mock;
+    }
 
     public function enableMock(): static
     {
@@ -67,11 +71,10 @@ class ApiParam
         return $this;
     }
 
-    public function isMock(): bool
+    public function setMock(bool $mock)
     {
-        return $this->mock;
+        $this->mock = $mock;
     }
-
 
     public function disableMock(): static
     {

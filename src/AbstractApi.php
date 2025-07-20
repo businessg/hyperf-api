@@ -59,7 +59,7 @@ abstract class AbstractApi implements ApiInterface
 
     final public function getApiParamByKeys(string ...$apiKeys): array
     {
-        return array_map(fn($apiKey) => $this->getApiParamByKey($apiKey), $apiKeys);
+        return array_map([$this, 'getApiParamByKey'], $apiKeys);
     }
 
     /**

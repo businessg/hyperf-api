@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace BusinessG\HyperfApi\Http;
 
+use BusinessG\HyperfApi\Exception\BusinessApiException;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Promise;
+use GuzzleHttp\Psr7\Response;
 use Hyperf\Guzzle\ClientFactory;
 use Hyperf\Guzzle\HandlerStackFactory;
 use PHPUnit\Event\Code\Throwable;
@@ -116,7 +118,7 @@ class HttpClient implements HttpClientInterface
                 $mockHandler = $request['mockHandler'] ?? null;
 
                 if ($mockHandler !== null) {
-                    $client = $this->createMockClient($clonedHandler);
+                    $client = $this->createMockClient($mockHandler);
                 } else {
                     $client = $this->getClient();
                 }
@@ -150,8 +152,7 @@ class HttpClient implements HttpClientInterface
         MockHandler $mockHandler
     ): ResponseInterface
     {
-        $client = $this->createMockClient($clonedHandler);
-        return $client->request($method, $uri, $options);
+        return $this->createMockClient($mockHandler)->request($method, $uri, $options);
     }
 
     /**
@@ -163,7 +164,10 @@ class HttpClient implements HttpClientInterface
     protected function createMockClient(MockHandler $mockHandler): Client
     {
         $handlerStack = new HandlerStack($mockHandler);
-        foreach ($this->getMiddlewares() as $middleware) {
+        if ($mockHandler->count() <= 0) {
+            $mockHandler->append(new Response(200, [], '{"response":"I am the default mock"}'));
+        }
+        foreach ($this->getMiddlewares() as $name => $middleware) {
             $handlerStack->push($middleware, is_string($name) ? $name : '');
         }
         return new Client([
