@@ -7,6 +7,7 @@ namespace BusinessG\HyperfApi;
 use BusinessG\HyperfApi\Exception\BusinessApiException;
 use BusinessG\HyperfApi\Http\HttpClient;
 use BusinessG\HyperfApi\Http\HttpClientInterface;
+use Hyperf\Collection\Arr;
 use Hyperf\Contract\ConfigInterface;
 use Psr\Container\ContainerInterface;
 use function Hyperf\Support\make;
@@ -84,25 +85,48 @@ abstract class AbstractApi implements ApiInterface
      * @param array $options
      * @return \Psr\Http\Message\ResponseInterface
      */
-    final  public function request(string $apiKey)
+    final  public function request(string $apiKey, array $options = [])
     {
-        return $this->requestByApiParam($this->getApiParamByKey($apiKey));
+        $apiParam = clone $this->getApiParamByKey($apiKey);
+        $apiParam->setOptions(Arr::merge($apiParam->getOptions(), $options));
+        return $this->requestByApiParam($apiParam, $options);
     }
 
     /**
      * 批量请求<apiKey>
      *
-     * @param array $apiKeys
+     * @param array<string>|array<string,array> $apiKeys
+     *  `[
+     *      "getAllUser",
+     *      "getUser"=>[
+     *          "json"=>["id"=>1]
+     *      ]
+     *  ]`
      * @param bool $parallel
      * @return array
      */
     final public function batchRequest(array $apiKeys, bool $parallel = true): array
     {
-        return $this->batchRequestByApiParam($this->getApiParamByKeys(...$apiKeys), $parallel);
+        $apiParams = [];
+        $keys = [];
+        foreach ($apiKeys as $key => $apiKey) {
+            if (is_string($apiKey)) {
+                $keys[] = $apiKey;
+                $apiParam = clone $this->getApiParamByKey($apiKey);
+            } elseif (is_array($apiKey)) {
+                $keys[] = $key;
+                $apiParam = clone $this->getApiParamByKey($key);
+                $apiParam->setOptions(Arr::merge($apiParam->getOptions(), $apiKey ?? []));
+            } else {
+                throw new BusinessApiException('The apikey data type is incorrect');
+            }
+            $apiParams[] = $apiParam;
+        };
+        return array_combine($keys, $this->batchRequestByApiParam($apiParams, $parallel));
     }
 
     /**
-     *  发送请求<apiParam>
+     * 发送请求<apiParam>
      *
      * @param ApiParam $apiParam
      * @param array $options
@@ -112,8 +136,8 @@ abstract class AbstractApi implements ApiInterface
     final public function requestByApiParam(ApiParam $apiParam)
     {
         $apiParam = $this->beforeRequest($apiParam);
-        $mockHandle = $apiParam->isMock() ? $apiParam->getMockHandle() : null;
-        return $this->getHttpClient()->request($apiParam->getMethod(), $apiParam->getUri(), $apiParam->getOptions(), $mockHandle);
+        $mockHandler = $apiParam->isMock() ? $apiParam->getMockHandler() : null;
+        return $this->getHttpClient()->request($apiParam->getMethod(), $apiParam->getUri(), $apiParam->getOptions(), $mockHandler);
     }
 
     /**
@@ -121,7 +145,7 @@ abstract class AbstractApi implements ApiInterface
      *
      * @param ApiParam $apiParam
      * @param array $options
-     * @return \Psr\Http\Message\ResponseInterface
+     * @return \Psr\Http\Message\ResponseInterface[]
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
     final public function batchRequestByApiParam(array $apiParams, bool $parallel = true)
@@ -131,11 +155,11 @@ abstract class AbstractApi implements ApiInterface
             return [
                 'uri' => $apiParam->getUri(),
                 'method' => $apiParam->getMethod(),
-                'mockHander' => $apiParam->isMock() ? $apiParam->getMockHandle() : null,
+                'mockHandler' => $apiParam->isMock() ? $apiParam->getMockHandler() : null,
                 'options' => $apiParam->getOptions(),
             ];
         }, $apiParams);
-        return $this->getHttpClient()->batchRequest($apiParams, $parallel);
+        return $this->getHttpClient()->batchRequest($requests, $parallel);
     }
 
     protected function getHttpClient(): HttpClientInterface

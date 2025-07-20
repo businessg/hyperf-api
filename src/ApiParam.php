@@ -82,12 +82,12 @@ class ApiParam
         return $this;
     }
 
-    public function getMockHandle(): mixed
+    public function getMockHandler(): MockHandler|null
     {
         return $this->mockHandler;
     }
 
-    public function setMockHandle(MockHandler $mockHandler): static
+    public function setMockHandler(MockHandler $mockHandler): static
     {
         $this->mockHandler = $mockHandler;
         return $this;

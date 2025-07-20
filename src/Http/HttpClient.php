@@ -170,7 +170,9 @@ class HttpClient implements HttpClientInterface
         foreach ($this->getMiddlewares() as $name => $middleware) {
             $handlerStack->push($middleware, is_string($name) ? $name : '');
         }
+        var_dump($this->config);
         return new Client([
+            ...$this->config,
             'handler' => $handlerStack,
         ]);
     }
@@ -186,6 +188,7 @@ class HttpClient implements HttpClientInterface
         foreach ($this->getMiddlewares() as $name => $middleware) {
             $handlerStack->push($middleware, is_string($name) ? $name : '');
         }
+
         return $this->clientFactory->create([
             ...$this->config,
             'handler' => $handlerStack,
