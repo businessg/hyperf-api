@@ -107,12 +107,13 @@ abstract class AbstractApi implements ApiInterface
     /**
      * 批量请求<apiKey>
      *
-     * @param array<string>|array<string,array> $apiKeys
+     * @param array<string>|array<string,array>|array<string,Pool> $apiKeys
      *  `[
      *      "getAllUser",
      *      "getUser"=>[
      *          "json"=>["id"=>1]
-     *      ]
+     *      ],
+     *     "getDemo" => new Pool($options1,$options2)
      *  ]`
      * @param bool $parallel
      * @return array
@@ -126,17 +127,25 @@ abstract class AbstractApi implements ApiInterface
             if (is_string($apiKey)) {
                 $keys[] = $apiKey;
                 $apiParam = clone $this->getApiParamByKey($apiKey);
+                $apiParams[] = $apiParam;
             } elseif (is_array($apiKey)) {
                 $keys[] = $key;
                 $apiParam = clone $this->getApiParamByKey($key);
                 $apiParam->setOptions(Arr::merge($apiParam->getOptions(), $apiKey ?? []));
+                $apiParams[] = $apiParam;
+            } elseif ($apiKey instanceof Pool) {
+                foreach ($apiKey->getOptions() as $k => $p) {
+                    $apiParam = clone $this->getApiParamByKey($key);
+                    $apiParam->setOptions(Arr::merge($apiParam->getOptions(), $p ?? []));
+                    $keys[] = "{$key}[{$k}]";
+                    $apiParams[] = $apiParam;
+                }
             } else {
                 throw new BusinessApiException('The apikey data type is incorrect');
             }
-            $apiParams[] = $apiParam;
         };
 
-        return array_combine($keys, $this->batchRequestByApiParam($apiParams, $parallel));
+        return $this->normalizeArrayWithBrackets(array_combine($keys, $this->batchRequestByApiParam($apiParams, $parallel)));
     }
 
     /**
@@ -216,6 +225,26 @@ abstract class AbstractApi implements ApiInterface
         }
         $formatter = new SafeResponseFormatter($config['messageFormatter'] ?? SafeResponseFormatter::CLF);
         return Middleware::log($this->logger, $formatter, $config['logLevel'] ?? LogLevel::INFO);
+    }
+
+
+    private function normalizeArrayWithBrackets(array $data): array
+    {
+        $result = [];
+        foreach ($data as $key => $value) {
+            if (preg_match('/^([^\[]+)\[(.+)\]$/', $key, $matches)) {
+                $baseKey = $matches[1];
+                $subKey = $matches[2];
+
+                if (!isset($result[$baseKey])) {
+                    $result[$baseKey] = [];
+                }
+                $result[$baseKey][$subKey] = $value;
+            } else {
+                $result[$key] = $value;
+            }
+        }
+        return $result;
     }
 
     public function getConfig(): array
