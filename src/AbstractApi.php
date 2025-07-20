@@ -28,13 +28,11 @@ abstract class AbstractApi implements ApiInterface
     {
         $apis = $this->getAllApis();
         if (isset($apis[$name])) {
-            $options = $arguments[0] ?? [];
-            return $this->request($name, $options ?? []);
+            return $this->request($name);
         }
 
         throw new \BadMethodCallException("Method {$name} not found");
     }
-
 
     /**
      * api
@@ -52,6 +50,7 @@ abstract class AbstractApi implements ApiInterface
         if (!isset($apis[$apiKey])) {
             throw new BusinessApiException(sprintf('api key not exists[%s]', $apiKey));
         }
+        $apiParam = $apis[$apiKey];
         if (!$apiParam instanceof ApiParam) {
             throw new BusinessApiException(sprintf('The corresponding value of apikey[%s] must be an instance of %s', $apiKey, ApiParam::class));
         }
@@ -62,7 +61,6 @@ abstract class AbstractApi implements ApiInterface
     {
         return array_map(fn($apiKey) => $this->getApiParamByKey($apiKey), $apiKeys);
     }
-
 
     /**
      * @return array<string, ApiParam>
@@ -86,9 +84,9 @@ abstract class AbstractApi implements ApiInterface
      * @param array $options
      * @return \Psr\Http\Message\ResponseInterface
      */
-    public function request(string $apiKey)
+    final  public function request(string $apiKey)
     {
-        return $this->requestByApiParam($this->beforeRequest($this->getApiParamByKey($apiKey)));
+        return $this->requestByApiParam($this->getApiParamByKey($apiKey));
     }
 
     /**
@@ -98,7 +96,7 @@ abstract class AbstractApi implements ApiInterface
      * @param bool $parallel
      * @return array
      */
-    public function batchRequest(array $apiKeys, bool $parallel = true): array
+    final public function batchRequest(array $apiKeys, bool $parallel = true): array
     {
         return $this->batchRequestByApiParam($this->getApiParamByKeys(...$apiKeys), $parallel);
     }
@@ -111,10 +109,11 @@ abstract class AbstractApi implements ApiInterface
      * @return \Psr\Http\Message\ResponseInterface
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function requestByApiParam(ApiParam $apiParam)
+    final public function requestByApiParam(ApiParam $apiParam)
     {
+        $apiParam = $this->beforeRequest($apiParam);
         $mockHandle = $apiParam->isMock() ? $apiParam->getMockHandle() : null;
-        return $this->httpClient->request($apiParam->getMethod(), $apiParam->getUri(), $apiParam->getOptions(), $mockHandle);
+        return $this->getHttpClient()->request($apiParam->getMethod(), $apiParam->getUri(), $apiParam->getOptions(), $mockHandle);
     }
 
     /**
@@ -125,7 +124,7 @@ abstract class AbstractApi implements ApiInterface
      * @return \Psr\Http\Message\ResponseInterface
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function batchRequestByApiParam(array $apiParams, bool $parallel = true)
+    final public function batchRequestByApiParam(array $apiParams, bool $parallel = true)
     {
         $requests = array_map(function (ApiParam $apiParam) {
             $apiParam = $this->beforeRequest($apiParam);
@@ -136,14 +135,14 @@ abstract class AbstractApi implements ApiInterface
                 'options' => $apiParam->getOptions(),
             ];
         }, $apiParams);
-        return $this->httpClient->batchRequest($apiParams, $parallel);
+        return $this->getHttpClient()->batchRequest($apiParams, $parallel);
     }
 
     protected function getHttpClient(): HttpClientInterface
     {
-        if ($this->httpClient instanceof HttpClientInterface) {
+        if (!$this->httpClient instanceof HttpClientInterface) {
             $this->httpClient = make(HttpClient::class, [
-                'config' => $this->getConfig()['http']??[],
+                'config' => $this->getConfig()['http'] ?? [],
             ]);
         }
         return $this->httpClient;

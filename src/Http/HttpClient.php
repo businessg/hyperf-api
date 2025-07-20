@@ -13,7 +13,7 @@ use Hyperf\Guzzle\HandlerStackFactory;
 use PHPUnit\Event\Code\Throwable;
 use Psr\Http\Message\ResponseInterface;
 
-class HttpClient
+class HttpClient implements HttpClientInterface
 {
     protected array $config;
     protected array $middlewares = [];
